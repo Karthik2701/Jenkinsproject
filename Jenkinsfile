@@ -1,38 +1,39 @@
-node {
- 
-  def mvnHome
-   
-stage('Preparation') { 
-// for display purposes
+pipeline {
+    agent { label 'jenkins-master' }
+    tools {
+        maven 'Maven'
+    }
 
-      // Get some code from a GitHub repository
+    stages {
+        stage('checkout') {
+            steps {
+               git branch: 'develop', credentialsId: 'git-cred', url: 'https://github.com/Karthik2701/Jenkinsproject.git' 
+            }
+        }
 
-      git 'https://github.com/raknas999/hello-world-servlet.git'
+        stage('build') {
+            steps {
+                sh 'mvn clean install'
+            }
+        }
 
-      // Get the Maven tool.
-     
- // ** NOTE: This 'M3' Maven tool must be configured
- 
-     // **       in the global configuration.   
-        
-      mvnHome = tool 'Maven'
-   }
+        stage('publish junit reports') {
+            steps {
+                junit 'samplepiepline/target/surefire-reports/*.xml'
+            }
+        }
 
-   stage('Build') {
-      // Run the maven build
-
-      if (isUnix()) {
-         sh "'${mvnHome}/bin/mvn' -Dmaven.test.failure.ignore clean package"
-      } 
-      else {
-         bat(/"${mvnHome}\bin\mvn" -Dmaven.test.failure.ignore clean package/)
-      
+        stage('Sonarqube') {
+            environment {
+                scannerHome = tool 'SonarQubeScanner'
+    }               steps {
+                withSonarQubeEnv('SonarQube') {
+                    sh "${scannerHome}/bin/sonar-scanner"
+        }               timeout(time: 10, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+        }
+    }
 }
-   }
- 
-  stage('Results') {
-      junit '**/target/surefire-reports/TEST-*.xml'
-      archive 'target/*.war'
-  
- }
+
+    }
 }
