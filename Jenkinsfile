@@ -19,7 +19,7 @@ pipeline {
 
         stage('publish junit reports') {
             steps {
-                junit 'samplepipeline/target/surefire-reports/*.xml'
+                junit '**/target/surefire-reports/*.xml'
             }
         }
 
