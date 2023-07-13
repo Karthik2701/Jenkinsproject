@@ -19,27 +19,33 @@ pipeline {
 
         stage('publish junit reports') {
             steps {
-                junit '**/target/surefire-reports/*.xml'
+                junit 'samplepiepline/target/surefire-reports/*.xml'
             }
         }
 
         stage('SonarQube') {
             environment {
-                scannerHome = tool 'SonarQube'
+                scannerHome = tool 'SonarQubeScanner'
             }
             steps {
                 withSonarQubeEnv('SonarQube') {
-                    sh "${scannerHome}/bin/sonar-scanner"
+                    sh "${scannaerHome}/bin/sonar-scanner"
                 }
-            //    timeout(time: 10, unit: 'MINUTES') {
-              //      waitForQualityGate abortPipeline: true
-                //}
+                timeout(time: 10, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
             }
         }
-	
-	stage('Artifact Uploader') {
+
+        stage('Artifact Uploader') {
             steps {
-		nexusPublisher nexusInstanceId: '12345', nexusRepositoryId: 'maven-releases', packages: [[$class: 'MavenPackage', mavenAssetList: [[classifier: '', extension: '', filePath: '/var/lib/jenkins/workspace/samplepipeline/target/helloworld.war']], mavenCoordinate: [artifactId: 'hello-world-servlet-example', groupId: 'com.geekcap.vmturbo', packaging: 'war', version: '$BUILD_NUMBER']]]
+                nexusPublisher nexusInstanceId: '12345', nexusRepositoryId: 'maven-releases', packages: [[$class: 'MavenPackage', mavenAssetList: [], mavenCoordinate: [artifactId: 'hello-world-servlet-example', groupId: 'com.geekcap.vmturbo', packaging: 'war', version: '$BUILD_NUMBER']]]
+            }
+        }
+
+        stage('Deploy war to server') {
+            steps {
+                deploy adapters: [tomcat9(credentialsId: 'tomcat-cred', path: '', url: 'http://3.83.100.83:8080')], contextPath: 'samplepipeline', war: '/var/lib/jenkins/workspace/samplepipeline/target/helloworld.war'
             }
         }
 
