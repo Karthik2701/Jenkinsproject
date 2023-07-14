@@ -1,3 +1,4 @@
+@Library("my-shared-library") _
 pipeline {
     agent { label 'jenkins-master' }
     tools {
@@ -13,13 +14,15 @@ pipeline {
 
         stage('build') {
             steps {
-                sh 'mvn clean install'
+	       mvnBuild()
+               //sh 'mvn clean install'
             }
         }
 
         stage('publish junit reports') {
             steps {
-                junit '**/target/surefire-reports/*.xml'
+                junit()
+                //junit '**/target/surefire-reports/*.xml'
             }
         }
 
@@ -28,8 +31,9 @@ pipeline {
                 scannerHome = tool 'SonarQube'
             }
             steps {
-                withSonarQubeEnv('SonarQube') {
-                    sh "${scannerHome}/bin/sonar-scanner"
+                sonarQube()
+                //withSonarQubeEnv('SonarQube') {
+                    //sh "${scannerHome}/bin/sonar-scanner"
                 }
                // timeout(time: 10, unit: 'MINUTES') {
                  //   waitForQualityGate abortPipeline: true
@@ -39,13 +43,15 @@ pipeline {
 
         stage('Artifact Uploader') {
             steps {
-                nexusPublisher nexusInstanceId: '12345', nexusRepositoryId: 'maven-releases', packages: [[$class: 'MavenPackage', mavenAssetList: [[classifier: '', extension: '', filePath: '/var/lib/jenkins/workspace/samplepipeline/target/helloworld.war']], mavenCoordinate: [artifactId: 'hello-world-servlet-example', groupId: 'com.geekcap.vmturbo', packaging: 'war', version: '$BUILD_NUMBER']]]
+                nexus()
+                //nexusPublisher nexusInstanceId: '12345', nexusRepositoryId: 'maven-releases', packages: [[$class: 'MavenPackage', mavenAssetList: [[classifier: '', extension: '', filePath: '/var/lib/jenkins/workspace/samplepipeline/target/helloworld.war']], mavenCoordinate: [artifactId: 'hello-world-servlet-example', groupId: 'com.geekcap.vmturbo', packaging: 'war', version: '$BUILD_NUMBER']]]
             }
         }
 
         stage('Deploy war to server') {
             steps {
-                deploy adapters: [tomcat9(credentialsId: 'tomcat-cred', path: '', url: 'http://3.83.100.83:8080')], contextPath: 'samplepipeline', war: '**/*.war'
+                tomcat()
+                //deploy adapters: [tomcat9(credentialsId: 'tomcat-cred', path: '', url: 'http://3.83.100.83:8080')], contextPath: 'samplepipeline', war: '**/*.war'
             }
         }
 
