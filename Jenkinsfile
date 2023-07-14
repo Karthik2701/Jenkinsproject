@@ -21,7 +21,7 @@ pipeline {
 
         stage('publish junit reports') {
             steps {
-                junit()
+                jUnit()
                 //junit '**/target/surefire-reports/*.xml'
             }
         }
